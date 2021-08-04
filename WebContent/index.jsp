@@ -2,11 +2,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="EUC-KR">
-<title>Insert title here</title>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/custom.css">
+<title>JSP-Board</title>
 </head>
 <body>
-	<h1>Hello, JSP!</h1>
-	<h2>Welcome!</h2>
+	<script>location.href="login.jsp"</script>
 </body>
 </html>
