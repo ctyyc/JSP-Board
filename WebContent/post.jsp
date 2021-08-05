@@ -1,8 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="java.io.PrintWriter" %>
-<%@ page import="post.PostDAO" %>
 <%@ page import="post.Post" %>
-<%@ page import="java.util.ArrayList" %>
+<%@ page import="post.PostDAO" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -21,12 +20,24 @@
 			userID = (String)session.getAttribute("userID");
 		}
 		
-		int pageNumber = 1; //기본은 1 페이지를 할당
-		// 만약 파라미터로 넘어온 오브젝트 타입 'pageNumber'가 존재한다면
-		// 'int'타입으로 캐스팅을 해주고 그 값을 'pageNumber'변수에 저장한다
-		if(request.getParameter("pageNumber") != null){
-			pageNumber = Integer.parseInt(request.getParameter("pageNumber"));
+		// postID를 초기화 시키고
+		// 'postID'라는 데이터가 넘어온 것이 존재한다면 캐스팅을 하여 변수에 담는다
+		int postID = 0;
+		if(request.getParameter("postID") != null){
+			postID = Integer.parseInt(request.getParameter("postID"));
 		}
+		
+		// 만약 넘어온 데이터가 없다면
+		if(postID == 0){
+			PrintWriter script = response.getWriter();
+			script.println("<script>");
+			script.println("alert('유효하지 않은 글입니다')");
+			script.println("location.href='board.jsp'");
+			script.println("</script");
+		}
+		
+		// 유효한 글이라면 구체적인 정보를 'post'라는 인스턴스에 담는다
+		Post post = new PostDAO().getPost(postID);
 	%>
 	
 	<!-- 네비게이션 -->
@@ -64,65 +75,56 @@
 	</nav>
 	<!-- 네비게이션 영역 끝 -->
 	
-	<!-- 게시판 메인 페이지 영역 시작 -->
+	<!-- 게시판 글 보기 양식 영역 시작 -->
 	<div class="container">
 		<div class="row">
-			<table class="table table-striped table-hover" style="text-align: center; border: 1px solid #dddddd">
+			<table class="table table-striped table-bordered" style="text-align: center; border: 1px solid #dddddd">
 				<thead>
 					<tr>
-						<th style="background-color: #eeeeee; text-align: center;">번호</th>
-						<th style="background-color: #eeeeee; text-align: center;">제목</th>
-						<th style="background-color: #eeeeee; text-align: center;">작성자</th>
-						<th style="background-color: #eeeeee; text-align: center;">작성일</th>
+						<th colspan="2" style="background-color: #eeeeee; text-align: center;">게시판 글 보기</th>
 					</tr>
 				</thead>
 				<tbody>
-					<%
-						PostDAO postDAO = new PostDAO(); // 인스턴스 생성
-						ArrayList<Post> list = postDAO.getList(pageNumber);
-						for(int i = 0; i < list.size(); i++){
-					%>
-					<!-- 해당 글을 볼 수 있도록 링크를 걸어둔다 -->
-					<tr onClick="location.href='post.jsp?postID=<%= list.get(i).getPostID() %>'">
-						<td><%= list.get(i).getPostID() %></td>
-						<td><%= list.get(i).getTitle() %></td>
-						<td><%= list.get(i).getUserID() %></td>
-						<td>
-							<%= list.get(i).getRegDate().substring(0, 11) 
-							+ list.get(i).getRegDate().substring(11, 13) + "시"
-							+ list.get(i).getRegDate().substring(14, 16) + "분" %>
+					<tr>
+						<td style="width: 20%;">글 제목</td>
+						<td colspan="2">
+							<%= post.getTitle().replaceAll(" ", "&nbsp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\n", "<br>") %>
 						</td>
 					</tr>
-					<%
-						}
-					%>
+					<tr>
+						<td>작성자</td>
+						<td colspan="2"><%= post.getUserID() %></td>
+					</tr>
+					<tr>
+						<td>작성일자</td>
+						<td colspan="2">
+							<%= post.getRegDate().substring(0, 11)
+								+ post.getRegDate().substring(11, 13) + "시"
+								+ post.getRegDate().substring(14, 16) + "분" %>
+						</td>
+					</tr>
+					<tr>
+						<td>내용</td>
+						<td colspan="2" style="height: 200px; text-align: left;">
+							<%= post.getContents().replaceAll(" ", "&nbsp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\n", "<br>") %>
+						</td>
+					</tr>
 				</tbody>
 			</table>
+			<a href="board.jsp" class="btn btn-primary">목록</a>
 			
-			<!-- 페이징 처리 영역 -->
+			<!-- 해당 글의 작성자가 본인이라면 수정과 삭제가 가능하도록 코드 추가 -->
 			<%
-				if(pageNumber != 1) {
+				if(userID != null && userID.equals(post.getUserID())){
 			%>
-				<a href="board.jsp?pageNumber=<%=pageNumber - 1 %>" class="btn btn-success btn-arraw-left">이전</a>
-			<%
-				} if(postDAO.nextPage(pageNumber + 1)) {
-			%>
-				<a href="board.jsp?pageNumber=<%=pageNumber + 1 %>" class="btn btn-success btn-arraw-left">다음</a>
-			<%
-				}
-			%>
-			
-			<!-- 글쓰기 버튼 생성 -->
-			<%
-				if(userID != null) {
-			%>
-				<a href="writePost.jsp" class="btn btn-primary pull-right">글쓰기</a>
+					<a href="updatePost.jsp?postID=<%= postID %>" class="btn btn-primary">수정</a>
+					<a href="deletePostAction.jsp?postID=<%= postID %>" class="btn btn-primary">삭제</a>
 			<%
 				}
 			%>
 		</div>
 	</div>
-	<!-- 게시판 메인 페이지 영역 끝 -->
+	<!-- 게시판 글 보기 양식 영역 끝 -->
 	
 	<!-- 부트스트랩 참조 영역 -->
 	<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
